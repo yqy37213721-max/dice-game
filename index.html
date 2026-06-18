@@ -615,6 +615,19 @@ function wDone(){
   h+="</div></div>";
   return h
 }
+
+async function rDice(){
+  if(isSpectator){tt("\u89C2\u6218\u8005\u65E0\u6CD5\u63F7\u9AB0","bad");return}
+  var p=pls.find(x=>x.player_uuid===myU);
+  if(!p)return;
+  if(p.dice&&p.dice.length>0){tt("\u4F60\u5DF2\u7ECF\u63F7\u8FC7\u9AB0\u4E86","bad");return}
+  var d=rl(5);if(isS(d))d=rl(5);
+  try{
+    await sb().from("dice_players").update({dice:d,dice_revealed:false}).eq("id",p.id);
+    if(gs&&gs.mode!=="war")hasRolled=true;
+    tt("\u{1F3B2} \u63F7\u9AB0\u5B8C\u6218","good")
+  }catch(e){}
+}
 function nG(){
   if(isSpectator){
     var sh='<div class="card" style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:8px">\u{1F440}</div><div style="font-size:16px;color:#f1c40f;margin-bottom:4px">\u89C2\u6218\u6A21\u5F0F</div><div style="font-size:12px;color:#888">\u4F60\u6B63\u5728\u89C2\u770B\u6E38\u620F</div>';
