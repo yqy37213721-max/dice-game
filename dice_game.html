@@ -99,7 +99,7 @@ function dieX(v){return '<span class="die die-xs die-v'+v+'">'+D[v]+'</span>'}
 function rnd(n){return Math.floor(Math.random()*n)+1}
 function rl(n){return Array.from({length:n},()=>rnd(6))}
 function isS(d){var s=[...new Set(d)].sort().join("");return s==="12345"||s==="23456"}
-function uuid(){var u=localStorage.getItem("du");if(!u){u=crypto.randomUUID();localStorage.setItem("du",u)}return u}
+function uuid(){var u=localStorage.getItem("du");if(!u){try{u=crypto.randomUUID()}catch(e){}if(!u)u="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==="x"?r:(r&3)|8;return v.toString(16)});localStorage.setItem("du",u)}return u}
 function nick(){return localStorage.getItem("dn")||""}
 function sn(v){localStorage.setItem("dn",v)}
 function tt(m,t){var e=document.getElementById("toast");e.textContent=m;e.className="toast show"+(t?" "+t:"");clearTimeout(e._t);e._t=setTimeout(()=>e.className="toast",2500)}
