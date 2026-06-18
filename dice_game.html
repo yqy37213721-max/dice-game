@@ -401,7 +401,7 @@ function wB(){
   for(var qi=1;qi<=maxQ;qi++)ui+='<option value="'+qi+'"'+(gs.current_bid&&qi<=gs.current_bid.qty?" disabled":"")+'>'+qi+'\u4E2A</option>';
   ui+='</select>';
   ui+='<select id="wV">';
-  for(var vi=1;vi<=6;vi++)ui+='<option value="'+vi+'"'+(gs.wild_broken&&vi===1?" disabled":"")+'>'+D[vi]+'</option>';
+  for(var vi=1;vi<=6;vi++)ui+='<option value="'+vi+'"'+("")+'>'+D[vi]+'</option>';
   ui+='</select>';
   ui+='<button class="btn btn-primary btn-sm" onclick="wBid()">\u{1F4E2} \u53EB\u4EF7</button>';
   ui+='<button class="btn btn-warning btn-sm" onclick="wOp()">\u{1F50D} \u5F00\u724C</button>';
@@ -522,7 +522,7 @@ function nG(){
   for(var qi=1;qi<=maxQ;qi++)h+='<option value="'+qi+'"'+(gs.current_bid&&qi<=gs.current_bid.qty?" disabled":"")+'>'+qi+'\u4E2A</option>';
   h+='</select>';
   h+='<select id="nV">';
-  for(var vi=1;vi<=6;vi++)h+='<option value="'+vi+'"'+(gs.wild_broken&&vi===1?" disabled":"")+'>'+D[vi]+'</option>';
+  for(var vi=1;vi<=6;vi++)h+='<option value="'+vi+'"'+("")+'>'+D[vi]+'</option>';
   h+='</select>';
   h+='<button class="btn btn-primary btn-sm" onclick="nBid()">\u{1F4E2} \u53EB\u4EF7</button>';
   h+='<button class="btn btn-warning btn-sm" onclick="nOp()">\u{1F50D} \u5F00\u724C</button>';
