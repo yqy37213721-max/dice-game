@@ -98,8 +98,41 @@ function ee(m){document.getElementById("err").style.display="block";document.get
 var pg="lobby",rc=null,ri=null,myU=localStorage.getItem("duuid")||null,myS=null,host=false,pls=[],gs=null,wR={},tR=null,tP=null,tG=null,LD=false;
 
 function rd(){document.getElementById("app").innerHTML=pg==="lobby"?lo():pg==="room"?ro():ga();po()}
-function po(){if(pg==="game"&&gs&&gs.mode==="war"&&gs.open_result){var g=document.getElementById("wOG");if(!g)return;var r=gs.open_result,ta=gs.team_a||[],tb=gs.team_b||[];var ac={1:0,2:0,3:0,4:0,5:0,6:0},bc={1:0,2:0,3:0,4:0,5:0,6:0};pls.filter(p=>p.dice).forEach(p=>{p.dice.forEach(v=>{(ta.includes(p.seat_number)?ac:bc)[v]++})});g.innerHTML='<div class="stat-i"><div class="lb">🔵 A</div>'+[1,2,3,4,5,6].map(v=>'<span class="num">'+ac[v]+"</span>"+D[v]).join("")+'</div><div class="stat-i"><div class="lb">🔴 B</div>'+[1,2,3,4,5,6].map(v=>'<span class="num">'+bc[v]+"</span>"+D[v]).join("")+'</div><div class="stat-i"><div class="lb">📊 全场</div>'+[1,2,3,4,5,6].map(v=>'<span class="num">'+(r[v]?r[v].total:0)+"</span>"+D[v]).join("")+'</div>'}
-  if(pg==="game"&&gs&&gs.mode==="normal"&&gs.open_result){var g2=document.getElementById("nOG");if(!g2)return;var r2=gs.open_result;g2.innerHTML=[1,2,3,4,5,6].map(v=>'<div class="stat-i"><div class="lb">'+D[v]+" "+v+'</div><span class="num">'+(r2[v]?r2[v].raw:0)+"</span>"+(v!==1&&r2.oneIsWild?'<div style="font-size:9px;color:#555">'+(r2[v]?r2[v].total:0)+"</div>":"")+"</div>").join("")}
+function po(){
+  if(pg==="game"&&gs&&gs.mode==="war"&&gs.open_result){
+    var g=document.getElementById("wOG");
+    if(!g)return;
+    var r=gs.open_result,ta=gs.team_a||[],tb=gs.team_b||[];
+    var ac={1:0,2:0,3:0,4:0,5:0,6:0},bc={1:0,2:0,3:0,4:0,5:0,6:0};
+    pls.filter(p=>p.dice).forEach(p=>{p.dice.forEach(v=>{(ta.includes(p.seat_number)?ac:bc)[v]++})});
+    var h2='<div style="margin-bottom:8px;font-size:13px;font-weight:bold;text-align:center">\u{1F4CA} \u5168\u573A\u9AB0\u5B50\u7EDF\u8BA1</div>';
+    h2+='<div class="stats-g">';
+    h2+='<div class="stat-i"><div class="lb">\u{1F535} A</div>';
+    for(var vi=1;vi<=6;vi++)h2+='<span class="num">'+ac[vi]+'</span>'+D[vi];
+    h2+='</div>';
+    h2+='<div class="stat-i"><div class="lb">\u{1F534} B</div>';
+    for(var vi=1;vi<=6;vi++)h2+='<span class="num">'+bc[vi]+'</span>'+D[vi];
+    h2+='</div>';
+    h2+='<div class="stat-i"><div class="lb">\u{1F4CA} \u5168\u573A(\u542B1)</div>';
+    for(var vi=1;vi<=6;vi++){
+      var hl=gs.current_bid&&vi===gs.current_bid.val&&r.wildTotal!==undefined;
+      h2+='<span class="num" style="'+(hl?"color:#f1c40f;font-size:22px":"")+'">'+(r[vi]?r[vi].total:0)+'</span>'+D[vi];
+    }
+    h2+='</div></div>';
+    g.innerHTML=h2;
+  }
+  if(pg==="game"&&gs&&gs.mode==="normal"&&gs.open_result){
+    var g2=document.getElementById("nOG");
+    if(!g2)return;
+    var r2=gs.open_result;
+    var h3="";
+    for(var vi=1;vi<=6;vi++){
+      h3+='<div class="stat-i"><div class="lb">'+D[vi]+' '+vi+'</div><span class="num">'+(r2[vi]?r2[vi].raw:0)+'</span>';
+      if(vi!==1&&r2.oneIsWild)h3+='<div style="font-size:9px;color:#555">+'+(r2[vi]?r2[vi].total-r2[vi].raw:0)+'</div>';
+      h3+='</div>';
+    }
+    g2.innerHTML=h3;
+  }
 }
 
 // ===== Lobby =====
@@ -202,16 +235,158 @@ function ga(){if(!gs)return '<div style="text-align:center;padding:40px;color:#8
 async function swM(m){if(!host){tt("只有房主可切换","bad");return}try{await sb().from("dice_game_state").update({mode:m,phase:m==="war"?"team_select":"playing",current_bid:null,bid_history:[],wild_broken:false,open_result:null,team_a:[],team_b:[]}).eq("id",gs.id)}catch(e){}}
 
 // ---- 世界大战 ----
-function wTS(){var ta=gs.team_a||[],tb=gs.team_b||[];var ua=pls.filter(p=>!ta.includes(p.seat_number)&&!tb.includes(p.seat_number)&&p.is_online);return '<div style="font-size:12px;color:#888;text-align:center;margin-bottom:6px">👑 点击加入队伍</div><div class="teams-grid">'+tC("ta","🔵 A队",ta,gs.captain_a)+tC("tb","🔴 B队",tb,gs.captain_b)+'</div>'+(ua.length>0?'<div class="card">'+ua.map(p=>{var m=p.player_uuid===myU;return '<div style="display:flex;gap:4px;align-items:center;padding:6px 8px;background:#1a1a2e;border-radius:8px;margin-bottom:4px"><span style="flex:1;font-size:13px">'+p.nickname+(m?" (我)":"")+'</span><button class="btn btn-sm btn-success" onclick="jT('+p.seat_number+',\'a\')">🔵 A</button><button class="btn btn-sm btn-danger" onclick="jT('+p.seat_number+',\'b\')">🔴 B</button></div>'}).join('')+'</div>':'')+'<div class="card text-center">'+(host?'<button class="btn btn-success btn-lg" onclick="wGo()">⚔️ 开战</button>':'<span style="color:#888;font-size:13px">等待房主...</span></div>')}
+function wTS(){
+  var ta=gs.team_a||[],tb=gs.team_b||[];
+  var ua=pls.filter(p=>!ta.includes(p.seat_number)&&!tb.includes(p.seat_number)&&p.is_online);
+  var h='<div style="text-align:center;margin-bottom:8px;color:#f1c40f;font-size:14px">\u{1F451} \u9009\u62E9\u4F60\u7684\u961F\u4F0D</div>'
+    +'<div class="teams-grid">'+tC("ta","\u{1F535} A\u961F",ta,gs.captain_a)+tC("tb","\u{1F534} B\u961F",tb,gs.captain_b)+'</div>';
+  if(ua.length>0){
+    h+='<div class="card" style="text-align:center"><div style="font-size:13px;color:#888;margin-bottom:8px">\u{1F464} \u672A\u5206\u914D\u73A9\u5BB6</div>';
+    ua.forEach(p=>{
+      var m=p.player_uuid===myU;
+      h+='<div style="display:flex;gap:6px;align-items:center;padding:8px 10px;background:#1a1a2e;border-radius:10px;margin-bottom:4px">'
+        +'<span style="flex:1;font-size:14px;font-weight:'+(m?'bold;color:#f1c40f':'')+'">'+p.nickname+(m?' (\u6211)':'')+'</span>'
+        +'<button class="btn btn-success btn-sm" onclick="jT('+p.seat_number+',0)" style="padding:6px 14px">A\u961F</button>'
+        +'<button class="btn btn-danger btn-sm" onclick="jT('+p.seat_number+',1)" style="padding:6px 14px">B\u961F</button>'
+        +'</div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="card text-center">'
+    +(host?'<button class="btn btn-success btn-lg btn-block" onclick="wGo()" style="font-size:16px;padding:14px">\u2694\uFE0F \u5F00\u59CB\u5BF9\u6218</button>'
+    :'<span style="color:#888;font-size:13px">\u23F3 \u7B49\u5F85\u623F\u4E3B\u5F00\u59CB...</span>')
+    +'</div>';
+  return h
+}
 function tC(c,l,ids,cap){return '<div class="team-card '+c+'"><div class="ttl">'+l+" ("+ids.length+"人)</div><div class='members'>"+(ids.length===0?'<span style="color:#555">暂无</span>':ids.map(s=>{var p=pls.find(x=>x.seat_number===s);return p?'<span class="member'+(cap===s?" cap":"")+'">'+p.nickname+(cap===s?" 👑":"")+'</span>':""}).join(""))+'</div></div>'}
-async function jT(sn,t){var ta=(gs.team_a||[]).filter(x=>x!==sn),tb=(gs.team_b||[]).filter(x=>x!==sn);if(t==="a")ta.push(sn);else tb.push(sn);try{await sb().from("dice_game_state").update({team_a:ta,team_b:tb}).eq("id",gs.id)}catch(e){}}
+async function jT(sn,t){
+  var ta=(gs.team_a||[]).filter(x=>x!==sn),tb=(gs.team_b||[]).filter(x=>x!==sn);
+  if(t===0)ta.push(sn);else tb.push(sn);
+  try{await sb().from("dice_game_state").update({team_a:ta,team_b:tb}).eq("id",gs.id)}catch(e){}
+}
 async function wGo(){if(!(gs.team_a||[]).length||!(gs.team_b||[]).length){tt("两队都要有人","bad");return}try{await sb().from("dice_game_state").update({captain_a:(gs.team_a||[])[0],captain_b:(gs.team_b||[])[0],phase:"battle"}).eq("id",gs.id)}catch(e){}}
-function wB(){var ta=gs.team_a||[],tb=gs.team_b||[];return '<div class="teams-grid">'+wTP("ta","🔵 A队",ta,gs.captain_a)+wTP("tb","🔴 B队",tb,gs.captain_b)+'</div><div class="bid-s"><div class="bid-turn">🎯 '+(gs.active_team==="a"?"🔵 A队":"🔴 B队")+"叫价</div>"+(gs.current_bid?'<div class="bid-cur">叫价：<span class="hl">'+gs.current_bid.qty+"个 "+D[gs.current_bid.val]+'</span></div><div style="font-size:10px;color:#888;text-align:center">1'+(gs.wild_broken?"❌":"✅")+'</div>':'<div class="bid-cur" style="color:#888;font-size:14px">请先掷骰再叫价</div>')+'<div class="bid-ctl"><select id="wQ">'+Array.from({length:(ta.length+tb.length)*5},(_,i)=>i+1).map(q=>'<option value="'+q+'"'+(gs.current_bid&&q<=gs.current_bid.qty?" disabled":"")+">"+q+"个</option>").join("")+'</select><select id="wV">'+[1,2,3,4,5,6].map(v=>'<option value="'+v+'"'+(gs.wild_broken&&v===1?" disabled":"")+">"+D[v]+"</option>").join("")+'</select><button class="btn btn-primary btn-sm" onclick="wBid()">📢 叫价</button><button class="btn btn-warning btn-sm" onclick="wOp()">🔍 开牌</button><button class="btn btn-success btn-sm" onclick="rDice()">🎲 掷骰</button></div>'+(gs.bid_history&&gs.bid_history.length>0?'<div class="bid-his">'+gs.bid_history.map(b=>'<em>'+(b.t==="a"?"🔵":"🔴")+" "+b.qty+"个"+D[b.val]+"</em>").join("→")+'</div>':"")+'</div><div class="open-box'+(gs.open_result?" show":"")+'" id="wOB"><h4>📊 统计</h4><div class="stats-g" id="wOG"></div></div>'}
-function wTP(c,l,ids,cap){return '<div class="team-card '+c+'"><div class="ttl">'+l+'</div><div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">'+ids.map(s=>{var p=pls.find(x=>x.seat_number===s);if(!p)return"";return '<div class="player-slot '+c+'" onclick="tog(\''+p.player_uuid+'\')"><div class="nm">'+p.nickname+(cap===s?"👑":"")+" "+(wR[p.player_uuid]?"👁":"🔒")+'</div><div class="dice-group">'+(p.dice?(wR[p.player_uuid]?p.dice.map(v=>dieX(v)).join(""):p.dice.map(()=>dieX(6)).join("")):'<span style="font-size:9px;color:#555">-</span>')+'</div><div class="lb">'+(wR[p.player_uuid]?"可见":"点击")+"</div></div>"}).join("")+"</div></div>"}
+function wB(){
+  var ta=gs.team_a||[],tb=gs.team_b||[];
+  var myTeam=ta.includes(myS)?"a":"b";
+  var myMembers=myTeam==="a"?ta:tb;
+  var enMembers=myTeam==="a"?tb:ta;
+  var myPlayer=pls.find(p=>p.player_uuid===myU);
+  var showAll=gs.open_result?true:false;
+  var ui="";
+  ui+='<div style="text-align:center;margin-bottom:6px">';
+  ui+='<span style="font-size:11px;color:#555">\u4F60\u5728</span> ';
+  ui+='<span style="font-size:14px;font-weight:bold;color:'+(myTeam==="a"?"#3498db":"#e74c3c")+'">'+(myTeam==="a"?"\u{1F535} A\u961F":"\u{1F534} B\u961F")+'</span>';
+  ui+='<span style="font-size:11px;color:#555"> | \u5269\u4F59 '+myMembers.length+'\u4EBA</span>';
+  ui+='</div>';
+  if(myPlayer&&myPlayer.dice){
+    ui+='<div style="text-align:center;margin-bottom:12px">';
+    ui+='<div style="font-size:13px;color:#f1c40f;margin-bottom:4px">\u{1F3B2} \u4F60\u7684\u9AB0\u5B50</div>';
+    ui+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">';
+    ui+=myPlayer.dice.map(v=>dieX(v)).join("");
+    ui+='</div></div>';
+  }
+  var enNames=pls.filter(p=>enMembers.includes(p.seat_number)).map(p=>p.nickname).join(" / ");
+  if(!enNames)enNames="\u6682\u65E0";
+  ui+='<div class="card" style="margin-bottom:8px">';
+  ui+='<div style="font-size:13px;color:'+(myTeam==="a"?"#e74c3c":"#3498db")+';margin-bottom:6px;text-align:center">';
+  ui+='\u2694\uFE0F \u5BF9\u624B\u961F\u4F0D: '+enNames;
+  ui+='</div>';
+  ui+='<div style="font-size:11px;color:#888;text-align:center">\u5BF9\u65B9\u5269\u4F59 '+enMembers.length+' \u4EBA</div>';
+  ui+='</div>';
+  if(showAll&&gs.open_result){
+    var r=gs.open_result;
+    var bid=gs.current_bid;
+    if(bid&&r.winner!==undefined){
+      var winColor=r.winner==="a"?"#3498db":"#e74c3c";
+      var winName=r.winner==="a"?"\u{1F535} A\u961F":"\u{1F534} B\u961F";
+      var loseName=r.winner==="a"?"\u{1F534} B\u961F":"\u{1F535} A\u961F";
+      ui+='<div class="card" style="text-align:center;border:2px solid '+winColor+';background:#1a1a2e">';
+      ui+='<div style="font-size:28px;margin-bottom:4px">\u{1F3C6}</div>';
+      ui+='<div style="font-size:18px;font-weight:bold;color:'+winColor+'">'+winName+' \u83B7\u80DC!</div>';
+      ui+='<div style="font-size:12px;color:#888;margin-top:4px">'+loseName+' \u559D\u9152</div>';
+      ui+='<div style="font-size:11px;color:#666;margin-top:2px">\u53EB\u4EF7 '+bid.qty+'\u4E2A'+D[bid.val]+' | \u5B9E\u9645 '+r.wildTotal+'\u4E2A</div>';
+      ui+='</div>';
+    }
+    ui+='<div id="wOG"></div>';
+  }
+  ui+='<div class="bid-s">';
+  ui+='<div class="bid-turn">\u{1F3AF} '+(gs.active_team===myTeam?"\u270F\uFE0F \u4F60\u4EEC\u53EB\u4EF7":"\u{1F441} \u5BF9\u624B\u53EB\u4EF7\u4E2D")+' ('+(gs.active_team==="a"?"\u{1F535} A\u961F":"\u{1F534} B\u961F")+')</div>';
+  if(gs.current_bid){
+    ui+='<div class="bid-cur">\u53EB\u4EF7\uFF1A<span class="hl">'+gs.current_bid.qty+'\u4E2A '+D[gs.current_bid.val]+'</span></div>';
+    ui+='<div style="font-size:10px;color:#888;text-align:center">1'+(gs.wild_broken?"\u274C":"\u2705")+'</div>';
+  }else ui+='<div class="bid-cur" style="color:#888;font-size:14px">\u8BF7\u5148\u63F7\u9AB0\u518D\u53EB\u4EF7</div>';
+  ui+='<div class="bid-ctl">';
+  ui+='<select id="wQ">';
+  var maxQ=(ta.length+tb.length)*5;
+  for(var qi=1;qi<=maxQ;qi++)ui+='<option value="'+qi+'"'+(gs.current_bid&&qi<=gs.current_bid.qty?" disabled":"")+'>'+qi+'\u4E2A</option>';
+  ui+='</select>';
+  ui+='<select id="wV">';
+  for(var vi=1;vi<=6;vi++)ui+='<option value="'+vi+'"'+(gs.wild_broken&&vi===1?" disabled":"")+'>'+D[vi]+'</option>';
+  ui+='</select>';
+  ui+='<button class="btn btn-primary btn-sm" onclick="wBid()">\u{1F4E2} \u53EB\u4EF7</button>';
+  ui+='<button class="btn btn-warning btn-sm" onclick="wOp()">\u{1F50D} \u5F00\u724C</button>';
+  ui+='<button class="btn btn-success btn-sm" onclick="rDice()">\u{1F3B2} \u63F7\u9AB0</button>';
+  ui+='</div>';
+  if(gs.bid_history&&gs.bid_history.length>0){
+    ui+='<div class="bid-his">';
+    gs.bid_history.forEach(b=>{ui+='<em>'+(b.t==="a"?"\u{1F535}":"\u{1F534}")+" "+b.qty+"\u4E2A"+D[b.val]+"</em> ";});
+    ui+='</div>';
+  }
+  ui+='</div>';
+  if(showAll)ui+='<div class="teams-grid">'+wTP("ta","\u{1F535} A\u961F",ta,gs.captain_a)+wTP("tb","\u{1F534} B\u961F",tb,gs.captain_b)+'</div>';
+  return ui
+}
+function wTP(c,l,ids,cap){
+  var showAll=gs.open_result?true:false;
+  var h='<div class="team-card '+c+'">';
+  h+='<div class="ttl">'+l+' ('+ids.length+'\u4EBA)</div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">';
+  ids.forEach(s=>{
+    var p=pls.find(x=>x.seat_number===s);
+    if(!p)return;
+    var isMe=p.player_uuid===myU;
+    var showDice=isMe||showAll;
+    var nm=p.nickname+(cap===s?' \u{1F451}':'')+(isMe?' (\u6211)':'');
+    h+='<div class="player-slot '+c+'">';
+    h+='<div class="nm" style="'+(isMe?'color:#f1c40f;font-weight:bold':'')+'">'+nm+'</div>';
+    h+='<div class="dice-group">';
+    if(p.dice){
+      if(showDice)h+=p.dice.map(v=>dieX(v)).join('');
+      else h+='<span style="font-size:20px;opacity:0.4">\u{1F3B2}</span>';
+    }else h+='<span style="font-size:9px;color:#555">-</span>';
+    h+='</div>';
+    h+='<div class="lb">'+(showDice?'\u{1F440}':(isMe?'\u81EA\u5DF1':'\u9690\u85CF'))+'</div>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+  return h
+}
 function tog(u){wR[u]=!wR[u];rd()}
 async function rDice(){var p=pls.find(x=>x.player_uuid===myU);if(!p)return;var d=rl(5);if(isS(d))d=rl(5);try{await sb().from("dice_players").update({dice:d,dice_revealed:false}).eq("id",p.id);tt("🎲 掷骰完成","good")}catch(e){}}
 async function wBid(){var q=parseInt(document.getElementById("wQ").value),v=parseInt(document.getElementById("wV").value);if(gs.current_bid&&(q<gs.current_bid.qty||(q===gs.current_bid.qty&&v<=gs.current_bid.val))){tt("叫价必须更大","bad");return}try{await sb().from("dice_game_state").update({current_bid:{qty:q,val:v},bid_history:[...(gs.bid_history||[]),{t:gs.active_team,qty:q,val:v}],active_team:gs.active_team==="a"?"b":"a",wild_broken:v===1?true:gs.wild_broken,open_result:null}).eq("id",gs.id)}catch(e){}}
-async function wOp(){if(!gs.current_bid){tt("没人叫价","bad");return}var ap=pls.filter(p=>p.dice),c={1:0,2:0,3:0,4:0,5:0,6:0};ap.forEach(p=>p.dice.forEach(v=>c[v]++));var ow=!gs.wild_broken,res={};for(var vi=1;vi<=6;vi++){var t=c[vi];if(ow&&vi!==1)t+=c[1];res[vi]={raw:c[vi],total:t}}res.oneIsWild=ow;try{await sb().from("dice_game_state").update({open_result:res}).eq("id",gs.id)}catch(e){}}
+async function wOp(){
+  if(!gs.current_bid){tt("\u6CA1\u4EBA\u53EB\u4EF7","bad");return}
+  var ap=pls.filter(p=>p.dice),c={1:0,2:0,3:0,4:0,5:0,6:0};
+  ap.forEach(p=>p.dice.forEach(v=>c[v]++));
+  var ow=!gs.wild_broken,res={};
+  for(var vi=1;vi<=6;vi++){
+    var t=c[vi];
+    if(ow&&vi!==1)t+=c[1];
+    res[vi]={raw:c[vi],total:t}
+  }
+  res.oneIsWild=ow;
+  // Win/Loss judgment
+  var bid=gs.current_bid;
+  var wildTotal=res[bid.val]?res[bid.val].total:0;
+  var bidderWins=wildTotal>=bid.qty;
+  // The bidding team is whoever made the current bid (stored in active_team as the NEXT team)
+  // So the bidding team is the OPPOSITE of active_team
+  var bidTeam=gs.active_team==='a'?'b':'a';
+  var winTeam=bidderWins?bidTeam:(bidTeam==='a'?'b':'a');
+  res.winner=winTeam;
+  res.wildTotal=wildTotal;
+  try{await sb().from("dice_game_state").update({open_result:res}).eq("id",gs.id)}catch(e){}
+}
 
 // ---- 骰子模式 ----
 function nG(){return '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px">'+pls.map((p,i)=>{var d=p.dice,it=gs.turn_index===i;return '<div class="p-card'+(it?" cur":"")+'"><div class="nm">'+p.nickname+(it?" 👈":"")+'</div><div class="dr">'+(d?d.map(v=>dieX(v)).join(""):'<span style="font-size:10px;color:#555">未掷</span>')+'</div></div>'}).join("")+'</div><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:6px"><button class="btn btn-primary btn-sm" onclick="rDice()">🎲 掷骰</button></div><div class="bid-s"><div class="bid-turn">🎯 '+(pls[gs.turn_index]?pls[gs.turn_index].nickname:"?")+"叫价</div>"+(gs.current_bid?'<div class="bid-cur">叫价：<span class="hl">'+gs.current_bid.qty+"个 "+D[gs.current_bid.val]+'</span></div><div style="font-size:10px;color:#888;text-align:center">1'+(gs.wild_broken?"❌":"✅")+'</div>':'<div class="bid-cur" style="color:#888;font-size:14px">尚未叫价</div>')+'<div class="bid-ctl"><select id="nQ">'+Array.from({length:pls.length*5},(_,i)=>i+1).map(q=>'<option value="'+q+'"'+(gs.current_bid&&q<=gs.current_bid.qty?" disabled":"")+">"+q+"个</option>").join("")+'</select><select id="nV">'+[1,2,3,4,5,6].map(v=>'<option value="'+v+'"'+(gs.wild_broken&&v===1?" disabled":"")+">"+D[v]+"</option>").join("")+'</select><button class="btn btn-primary btn-sm" onclick="nBid()">📢 叫价</button><button class="btn btn-warning btn-sm" onclick="nOp()">🔍 开牌</button></div>'+(gs.bid_history&&gs.bid_history.length>0?'<div class="bid-his">'+gs.bid_history.map(b=>'<em>'+b.p+": "+b.qty+"个"+D[b.val]+"</em>").join("→")+'</div>':"")+'</div><div class="open-box'+(gs.open_result?" show":"")+'" id="nOB"><h4>📊 全场统计</h4><div class="stats-g" id="nOG"></div></div>'}
