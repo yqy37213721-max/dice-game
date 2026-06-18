@@ -95,7 +95,7 @@ function sn(v){localStorage.setItem("dn",v)}
 function tt(m,t){var e=document.getElementById("toast");e.textContent=m;e.className="toast show"+(t?" "+t:"");clearTimeout(e._t);e._t=setTimeout(()=>e.className="toast",2500)}
 function ee(m){document.getElementById("err").style.display="block";document.getElementById("err").innerHTML+=m+"\n"}
 
-var pg="lobby",rc=null,ri=null,myU=localStorage.getItem("duuid")||null,myS=null,host=false,pls=[],gs=null,wR={},tR=null,tP=null,tG=null,LD=false;
+var pg="lobby",rc=null,ri=null,myU=localStorage.getItem("duuid")||null,myS=null,host=false,pls=[],gs=null,wR={},tR=null,tP=null,tG=null,LD=false,isSpectator=false;
 
 function rd(){
   var ae=document.activeElement;
@@ -186,21 +186,14 @@ async function jR(){
   if(!c||c.length!==4){tt("\u8BF7\u8F93\u51654\u4F4D\u623F\u95F4\u53F7","bad");return}
   LD=true;
   try{
-    if(!nick()){
-      showNick("join");
-      LD=false;
-      return
-    }
+    if(!nick()){showNick("join");LD=false;return}
     var rr=await sb().from("dice_rooms").select("*").eq("room_code",c).maybeSingle();
     if(rr.error||!rr.data){tt("\u623F\u95F4\u4E0D\u5B58\u5728","bad");return}
-    if(rr.data.status!=="waiting"){tt(rr.data.status==="playing"?"\u6E38\u620F\u5DF2\u5F00\u59CB":"\u6E38\u620F\u5DF2\u7ED3\u675F","bad");return}
+    if(rr.data.status!=="waiting"&&rr.data.status!=="playing"){tt("\u6E38\u620F\u5DF2\u7ED3\u675F","bad");return}
     ri=rr.data.id;rc=c;
     tt("\u2705 \u5DF2\u52A0\u5165\u623F\u95F4","good");
     toRm()
-  }catch(e){
-    ee("\u52A0\u5165\u5931\u8D25: "+e.message);
-    tt("\u52A0\u5165\u5931\u8D25","bad")
-  }finally{LD=false}
+  }catch(e){ee("\u52A0\u5165\u5931\u8D25: "+e.message);tt("\u52A0\u5165\u5931\u8D25","bad")}finally{LD=false}
 }
 
 // ===== 昵称弹窗 =====
@@ -211,17 +204,56 @@ function showNick(action){
 function cfNick(){var v=document.getElementById("nickInput").value.trim();if(!v){tt("请输入昵称","bad");return}sn(v);tt("✅ 昵称已设置","good");rd()}
 
 // ===== Room =====
-function ro(){var n=nick()||"";return '<div class="header"><h1>🎲 骰子战争</h1></div><div class="card"><div class="room-header"><span style="font-size:14px;color:#888">房间号</span><span class="room-code-box" onclick="cp()">'+rc+'</span></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:14px;color:#e94560">👤 '+nick()+'</span><button class="btn btn-secondary btn-sm" onclick="cp()">📋 复制</button><button class="btn btn-danger btn-sm" onclick="lv()">退出</button></div><div style="font-size:13px;color:#888;margin-bottom:8px">👥 '+(pls.length)+'人 在线</div>'+(pls.map(p=>{var m=p.player_uuid===myU;return '<div class="player-item"><span class="seat">#'+p.seat_number+'</span><span class="name">'+p.nickname+'</span>'+(p.is_host?'<span class="bdg host">房主</span>':'')+(m?'<span class="bdg me">我</span>':'')+'<span class="dot '+(p.is_online?"on":"off")+'"></span></div>'}).join(''))+'<div style="margin-top:12px;text-align:center">'+(host?'<button class="btn btn-primary btn-lg" onclick="sG()">⚔️ 开始游戏</button>':'<span style="color:#888;font-size:13px">等待房主开始...</span>')+'</div></div>'}
+function ro(){
+  var spectators=pls.filter(p=>p.seat_number===0);
+  var players=pls.filter(p=>p.seat_number!==0);
+  var h='<div class="header"><h1>\u{1F3B2} \u9AB0\u5B50\u6218\u4E89</h1></div>';
+  h+='<div class="card">';
+  h+='<div class="room-header"><span style="font-size:14px;color:#888">\u623F\u95F4\u53F7</span><span class="room-code-box" onclick="cp()">'+rc+'</span></div>';
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+  h+='<span style="font-size:14px;color:#e94560">\u{1F464} '+nick()+'</span>';
+  h+='<button class="btn btn-secondary btn-sm" onclick="cp()">\u{1F4CB} \u590D\u5236</button>';
+  h+='<button class="btn btn-danger btn-sm" onclick="lv()">\u9000\u51FA</button>';
+  h+='</div>';
+  h+='<div style="font-size:13px;color:#888;margin-bottom:8px">\u{1F465} '+players.length+'\u4EBA \u5728\u7EBF</div>';
+  players.forEach(p=>{
+    var m=p.player_uuid===myU;
+    h+='<div class="player-item"><span class="seat">#'+p.seat_number+'</span><span class="name">'+p.nickname+'</span>';
+    if(p.is_host)h+='<span class="bdg host">\u623F\u4E3B</span>';
+    if(m)h+='<span class="bdg me">\u6211</span>';
+    h+='<span class="dot '+(p.is_online?"on":"off")+'"></span></div>';
+  });
+  if(spectators.length>0){
+    h+='<div style="margin-top:8px;font-size:11px;color:#888">\u{1F440} \u89C2\u6218 '+spectators.length+'\u4EBA</div>';
+    spectators.forEach(p=>{
+      var m=p.player_uuid===myU;
+      h+='<div class="player-item" style="opacity:0.6"><span class="seat">\u{1F441}</span><span class="name">'+p.nickname+'</span>';
+      if(m)h+='<span class="bdg me">\u6211</span>';
+      h+='</div>';
+    });
+  }
+  h+='<div style="margin-top:12px;text-align:center">';
+  if(host)h+='<button class="btn btn-primary btn-lg" onclick="sG()">\u2694\uFE0F \u5F00\u59CB\u6E38\u620F</button>';
+  else h+='<span style="color:#888;font-size:13px">\u7B49\u5F85\u623F\u4E3B\u5F00\u59CB...</span>';
+  h+='</div></div>';
+  return h
+}
 async function toRm(){
   if(!myU){myU=uuid();localStorage.setItem("duuid",myU)}
+  var room=await sb().from("dice_rooms").select("status").eq("id",ri).maybeSingle();
+  var isPlaying=room.data&&room.data.status==="playing";
   if(ri&&!myS){
     try{
       var mr=await sb().from("dice_players").select("seat_number").eq("room_id",ri).order("seat_number",{ascending:false}).limit(1);
       var sn2=mr.data&&mr.data.length>0?mr.data[0].seat_number+1:1;
-      var pr=await sb().from("dice_players").insert({room_id:ri,player_uuid:myU,nickname:nick(),seat_number:sn2,is_host:false,is_online:true}).select().single();
-      if(!pr.error){myS=sn2}
+      var pr=await sb().from("dice_players").insert({room_id:ri,player_uuid:myU,nickname:nick(),seat_number:isPlaying?0:sn2,is_host:false,is_online:true,}).select().single();
+      if(!pr.error){
+        if(isPlaying){isSpectator=true;tt("\u{1F440} \u89C2\u6218\u6A21\u5F0F","good")}
+        else myS=sn2
+      }
     }catch(e){ee("\u52A0\u5165\u623F\u95F4\u5931\u8D25: "+e.message)}
   }
+  if(isPlaying){stG();return}
   pg="room";rd();
   if(tR)clearInterval(tR);
   tR=setInterval(async()=>{
@@ -230,31 +262,32 @@ async function toRm(){
   },3000)
 }
 function cp(){if(navigator.clipboard)navigator.clipboard.writeText(rc);tt("📋 已复制: "+rc,"good")}
-async function lv(){try{if(ri&&myU)await sb().from("dice_players").update({is_online:false}).eq("room_id",ri).eq("player_uuid",myU)}catch(e){}if(tR)clearInterval(tR);if(tP)clearInterval(tP);if(tG)clearInterval(tG);ri=null;rc=null;myS=null;host=false;pls=[];gs=null;pg="lobby";rd()}
+async function lv(){
+  try{if(ri&&myU)await sb().from("dice_players").update({is_online:false}).eq("room_id",ri).eq("player_uuid",myU)}catch(e){}
+  if(tR)clearInterval(tR);if(tP)clearInterval(tP);if(tG)clearInterval(tG);
+  ri=null;rc=null;myS=null;host=false;pls=[];gs=null;isSpectator=false;pg="lobby";rd()
+}
 async function sG(){if(!host){tt("只有房主可以开始","bad");return}var on=pls.filter(p=>p.is_online);if(on.length<2){tt("至少2人在线","bad");return}try{var to=on.map(p=>p.seat_number).sort((a,b)=>a-b);await sb().from("dice_game_state").insert({room_id:ri,mode:"war",phase:"team_select",turn_order:to,team_a:[],team_b:[],captain_a:null,captain_b:null,active_team:"a",turn_index:0,current_bid:null,bid_history:[],wild_broken:false,open_result:null});await sb().from("dice_rooms").update({status:"playing"}).eq("id",ri);tt("✅ 游戏开始!","good");stG()}catch(e){ee("开始失败: "+e.message)}}
 
 // ===== Game =====
 function stG(){
-  if(tR)clearInterval(tR);
-  if(tG)clearInterval(tG);
+  if(tR)clearInterval(tR);if(tG)clearInterval(tG);
   tG=setInterval(async()=>{
-    var ae=document.activeElement;
-    if(ae&&ae.tagName==="SELECT")return;
+    var ae=document.activeElement;if(ae&&ae.tagName==="SELECT")return;
     try{var r=await sb().from("dice_game_state").select("*").eq("room_id",ri).maybeSingle();if(!r.error&&r.data){gs=r.data;pg="game";rd()}}catch(e){}
   },2000);
   if(tP)clearInterval(tP);
   tP=setInterval(async()=>{
-    var ae=document.activeElement;
-    if(ae&&ae.tagName==="SELECT")return;
+    var ae=document.activeElement;if(ae&&ae.tagName==="SELECT")return;
     try{var r=await sb().from("dice_players").select("*").eq("room_id",ri).order("seat_number");if(!r.error){pls=r.data;if(pg==="game")rd()}}catch(e){}
   },3000);
   pg="game";rd()
-}
-function ga(){if(!gs)return '<div style="text-align:center;padding:40px;color:#888">加载游戏中...</div>';var tabs='<div class="game-tabs"><div class="game-tab'+(gs.mode==="war"?" active":"")+'" onclick="swM(\'war\')">⚔️ 世界大战</div><div class="game-tab'+(gs.mode==="normal"?" active":"")+'" onclick="swM(\'normal\')">🎲 骰子</div></div>';var body="";if(gs.mode==="war")body=gs.phase==="team_select"?wTS():wB();else body=nG();return '<div class="header"><h1>🎲 骰子战争</h1><div class="sub">房间: '+rc+'</div></div>'+tabs+body+'<div style="text-align:center;margin-top:8px"><button class="btn btn-danger btn-sm" onclick="lv()">🚪 退出房间</button></div>'}
+}function ga(){if(!gs)return '<div style="text-align:center;padding:40px;color:#888">加载游戏中...</div>';var tabs='<div class="game-tabs"><div class="game-tab'+(gs.mode==="war"?" active":"")+'" onclick="swM(\'war\')">⚔️ 世界大战</div><div class="game-tab'+(gs.mode==="normal"?" active":"")+'" onclick="swM(\'normal\')">🎲 骰子</div></div>';var body="";if(gs.mode==="war")body=gs.phase==="team_select"?wTS():wB();else body=nG();return '<div class="header"><h1>🎲 骰子战争</h1><div class="sub">房间: '+rc+'</div></div>'+tabs+body+'<div style="text-align:center;margin-top:8px"><button class="btn btn-danger btn-sm" onclick="lv()">🚪 退出房间</button></div>'}
 async function swM(m){if(!host){tt("只有房主可切换","bad");return}try{await sb().from("dice_game_state").update({mode:m,phase:m==="war"?"team_select":"playing",current_bid:null,bid_history:[],wild_broken:false,open_result:null,team_a:[],team_b:[]}).eq("id",gs.id)}catch(e){}}
 
 // ---- 世界大战 ----
 function wTS(){
+  if(isSpectator)return '<div class="card" style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:8px">\u{1F440}</div><div style="font-size:16px;color:#f1c40f">\u89C2\u6218\u6A21\u5F0F</div><div style="font-size:12px;color:#888">\u7B49\u5F85\u961F\u4F0D\u5206\u914D...</div></div>';
   var ta=gs.team_a||[],tb=gs.team_b||[];
   var ua=pls.filter(p=>!ta.includes(p.seat_number)&&!tb.includes(p.seat_number)&&p.is_online);
   var h='<div style="text-align:center;margin-bottom:8px;color:#f1c40f;font-size:14px">\u{1F451} \u9009\u62E9\u4F60\u7684\u961F\u4F0D</div>'
@@ -285,6 +318,7 @@ async function jT(sn,t){
 }
 async function wGo(){if(!(gs.team_a||[]).length||!(gs.team_b||[]).length){tt("两队都要有人","bad");return}try{await sb().from("dice_game_state").update({captain_a:(gs.team_a||[])[0],captain_b:(gs.team_b||[])[0],phase:"battle"}).eq("id",gs.id)}catch(e){}}
 function wB(){
+  if(isSpectator)return '<div class="card" style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:8px">\u{1F440}</div><div style="font-size:16px;color:#f1c40f;margin-bottom:4px">\u89C2\u6218\u6A21\u5F0F</div><div style="font-size:12px;color:#888">\u4F60\u6B63\u5728\u89C2\u770B\u6E38\u620F</div></div>';
   var ta=gs.team_a||[],tb=gs.team_b||[];
   var myTeam=ta.includes(myS)?"a":"b";
   var myMembers=myTeam==="a"?ta:tb;
@@ -381,7 +415,7 @@ function wTP(c,l,ids,cap){
   return h
 }
 function tog(u){wR[u]=!wR[u];rd()}
-async function rDice(){var p=pls.find(x=>x.player_uuid===myU);if(!p)return;var d=rl(5);if(isS(d))d=rl(5);try{await sb().from("dice_players").update({dice:d,dice_revealed:false}).eq("id",p.id);tt("🎲 掷骰完成","good")}catch(e){}}
+async function rDice(){if(isSpectator){tt("\u89C2\u6218\u8005\u65E0\u6CD5\u63F7\u9AB0","bad");return}var p=pls.find(x=>x.player_uuid===myU);if(!p)return;var d=rl(5);if(isS(d))d=rl(5);try{await sb().from("dice_players").update({dice:d,dice_revealed:false}).eq("id",p.id);tt("🎲 掷骰完成","good")}catch(e){}}
 async function wBid(){var q=parseInt(document.getElementById("wQ").value),v=parseInt(document.getElementById("wV").value);if(gs.current_bid&&(q<gs.current_bid.qty||(q===gs.current_bid.qty&&v<=gs.current_bid.val))){tt("叫价必须更大","bad");return}try{await sb().from("dice_game_state").update({current_bid:{qty:q,val:v},bid_history:[...(gs.bid_history||[]),{t:gs.active_team,qty:q,val:v}],active_team:gs.active_team==="a"?"b":"a",wild_broken:v===1?true:gs.wild_broken,open_result:null}).eq("id",gs.id)}catch(e){}}
 async function wOp(){
   if(!gs.current_bid){tt("\u6CA1\u4EBA\u53EB\u4EF7","bad");return}
@@ -409,6 +443,22 @@ async function wOp(){
 
 // ---- 骰子模式 ----
 function nG(){
+  if(isSpectator){
+    var sh='<div class="card" style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:8px">\u{1F440}</div><div style="font-size:16px;color:#f1c40f;margin-bottom:4px">\u89C2\u6218\u6A21\u5F0F</div><div style="font-size:12px;color:#888">\u4F60\u6B63\u5728\u89C2\u770B\u6E38\u620F</div>';
+    sh+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px">';
+    pls.filter(p=>p.seat_number!==0).forEach((p,i)=>{
+      var d=p.dice,it=gs.turn_index===i;
+      sh+='<div class="p-card'+(it?" cur":"")+'"><div class="nm">'+p.nickname+(it?" \u{1F448}":"")+'</div><div class="dr">';
+      if(d)sh+=d.map(v=>dieX(v)).join("");
+      else sh+='<span style="font-size:10px;color:#555">\u672A\u63F7</span>';
+      sh+='</div></div>';
+    });
+    sh+='</div>';
+    if(gs.current_bid)sh+='<div style="text-align:center;margin-top:8px;font-size:14px">\u53EB\u4EF7\uFF1A<b style="color:#f1c40f">'+gs.current_bid.qty+'\u4E2A '+D[gs.current_bid.val]+'</b></div>';
+    sh+='</div>';
+    if(gs.open_result)sh+='<div id="nOG"></div>';
+    return sh;
+  }
   var showAll=gs.open_result?true:false;
   var h='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px">';
   pls.forEach((p,i)=>{
