@@ -95,14 +95,14 @@ function sn(v){localStorage.setItem("dn",v)}
 function tt(m,t){var e=document.getElementById("toast");e.textContent=m;e.className="toast show"+(t?" "+t:"");clearTimeout(e._t);e._t=setTimeout(()=>e.className="toast",2500)}
 function ee(m){document.getElementById("err").style.display="block";document.getElementById("err").innerHTML+=m+"\n"}
 
-var pg="lobby",rc=null,ri=null,myU=localStorage.getItem("duuid")||null,myS=null,host=false,pls=[],gs=null,wR={},tR=null,tP=null,tG=null,LD=false,isSpectator=false;
+var pg="lobby",rc=null,ri=null,myU=localStorage.getItem("duuid")||null,myS=null,host=false,pls=[],gs=null,wR={},tR=null,tP=null,tG=null,LD=false,isSpectator=false,hasRolled=false;
 
 async function newRound(){
   try{
     await sb().from("dice_game_state").update({
       current_bid:null,bid_history:[],wild_broken:false,open_result:null,
       active_team:"a",phase:"battle"
-    }).eq("id",gs.id);
+    }).eq("id",gs.id);hasRolled=false;
     await sb().from("dice_players").update({dice:null,dice_revealed:false}).eq("room_id",ri);
     tt("\u{1F504} \u65B0\u4E00\u8F6E\u5F00\u59CB","good")
   }catch(e){ee("\u65B0\u4E00\u8F6E\u5931\u8D25: "+e.message)}
@@ -113,7 +113,7 @@ async function specJoin(){
     var mr=await sb().from("dice_players").select("seat_number").eq("room_id",ri).order("seat_number",{ascending:false}).limit(1);
     var sn2=mr.data&&mr.data.length>0?mr.data[0].seat_number+1:1;
     await sb().from("dice_players").update({seat_number:sn2,is_spectator:false}).eq("room_id",ri).eq("player_uuid",myU);
-    myS=sn2;isSpectator=false;
+    myS=sn2;isSpectator=false;hasRolled=false;
     var ta=gs.team_a||[],tb=gs.team_b||[];
     if(ta.length<=tb.length)ta.push(sn2);else tb.push(sn2);
     await sb().from("dice_game_state").update({team_a:ta,team_b:tb}).eq("id",gs.id);
@@ -159,6 +159,10 @@ function po(){
       h3+='</div>';
     }
     g2.innerHTML=h3;
+    if(r2.winner){
+      var winMsg=r2.winner==="bidder"?"\u2705 "+(r2.winnerName||"?")+" \u53EB\u4EF7\u6210\u529F":"\u274C \u53EB\u4EF7\u5931\u8D25";
+      g2.innerHTML+='<div style="text-align:center;margin-top:8px;font-weight:bold;font-size:14px;color:'+(r2.winner==="bidder"?"#27ae60":"#e74c3c")+'">'+winMsg+' (\u5B9E\u9645 '+(r2.wildTotal||0)+'\u4E2A)</div>';
+    }
   }
 }
 
@@ -403,9 +407,9 @@ function wB(){
   ui+='<select id="wV">';
   for(var vi=1;vi<=6;vi++)ui+='<option value="'+vi+'"'+("")+'>'+D[vi]+'</option>';
   ui+='</select>';
-  ui+='<button class="btn btn-primary btn-sm" onclick="wBid()">\u{1F4E2} \u53EB\u4EF7</button>';
-  ui+='<button class="btn btn-warning btn-sm" onclick="wOp()">\u{1F50D} \u5F00\u724C</button>';
-  ui+='<button class="btn btn-success btn-sm" onclick="rDice()">\u{1F3B2} \u63F7\u9AB0</button>';
+  ui+='<button class="btn btn-primary btn-sm" onclick="wBid()" id="wBidBtn">\u{1F4E2} \u53EB\u4EF7</button>';
+  ui+='<button class="btn btn-warning btn-sm" onclick="wOp()" id="wOpBtn">\u{1F50D} \u5F00\u724C</button>';
+  ui+='<button class="btn btn-success btn-sm" onclick="rDice()" id="wRollBtn">\u{1F3B2} \u63F7\u9AB0</button>';
   ui+='</div>';
   if(gs.bid_history&&gs.bid_history.length>0){
     ui+='<div class="bid-his">';
@@ -414,6 +418,17 @@ function wB(){
   }
   ui+='</div>';
   if(showAll)ui+='<div class="teams-grid">'+wTP("ta","\u{1F535} A\u961F",ta,gs.captain_a)+wTP("tb","\u{1F534} B\u961F",tb,gs.captain_b)+'</div>';
+  setTimeout(function(){
+    var ta=gs.team_a||[],tb=gs.team_b||[];
+    var myTeam=ta.includes(myS)?"a":"b";
+    var isMyTurn=gs.active_team===myTeam;
+    var b=document.getElementById("wBidBtn");
+    var o=document.getElementById("wOpBtn");
+    var r=document.getElementById("wRollBtn");
+    if(b)b.disabled=!isMyTurn||isSpectator;
+    if(o)o.disabled=!isMyTurn||isSpectator||!gs.current_bid;
+    if(r)r.disabled=hasRolled||isSpectator;
+  },100);
   return ui
 }
 function wTP(c,l,ids,cap){
@@ -442,7 +457,18 @@ function wTP(c,l,ids,cap){
   return h
 }
 function tog(u){wR[u]=!wR[u];rd()}
-async function rDice(){if(isSpectator){tt("\u89C2\u6218\u8005\u65E0\u6CD5\u63F7\u9AB0","bad");return}var p=pls.find(x=>x.player_uuid===myU);if(!p)return;var d=rl(5);if(isS(d))d=rl(5);try{await sb().from("dice_players").update({dice:d,dice_revealed:false}).eq("id",p.id);tt("🎲 掷骰完成","good")}catch(e){}}
+async function rDice(){
+  if(isSpectator){tt("\u89C2\u6218\u8005\u65E0\u6CD5\u63F7\u9AB0","bad");return}
+  if(hasRolled){tt("\u4F60\u5DF2\u7ECF\u63F7\u8FC7\u9AB0\u4E86","bad");return}
+  var p=pls.find(x=>x.player_uuid===myU);
+  if(!p)return;
+  var d=rl(5);if(isS(d))d=rl(5);
+  try{
+    await sb().from("dice_players").update({dice:d,dice_revealed:false}).eq("id",p.id);
+    hasRolled=true;
+    tt("\u{1F3B2} \u63F7\u9AB0\u5B8C\u6210","good")
+  }catch(e){}
+}
 async function wBid(){var q=parseInt(document.getElementById("wQ").value),v=parseInt(document.getElementById("wV").value);if(gs.current_bid&&(q<gs.current_bid.qty||(q===gs.current_bid.qty&&v<=gs.current_bid.val))){tt("叫价必须更大","bad");return}try{await sb().from("dice_game_state").update({current_bid:{qty:q,val:v},bid_history:[...(gs.bid_history||[]),{t:gs.active_team,qty:q,val:v}],active_team:gs.active_team==="a"?"b":"a",wild_broken:v===1?true:gs.wild_broken,open_result:null}).eq("id",gs.id)}catch(e){}}
 async function wOp(){
   if(!gs.current_bid){tt("\u6CA1\u4EBA\u53EB\u4EF7","bad");return}
@@ -506,7 +532,7 @@ function nG(){
   });
   h+='</div>';
   h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:6px">';
-  h+='<button class="btn btn-primary btn-sm" onclick="rDice()">\u{1F3B2} \u63F7\u9AB0</button>';
+  h+='<button class="btn btn-primary btn-sm" onclick="rDice()" id="nRollBtn">\u{1F3B2} \u63F7\u9AB0</button>';
   h+='</div>';
   h+='<div class="bid-s">';
   h+='<div class="bid-turn">\u{1F3AF} '+(pls[gs.turn_index]?pls[gs.turn_index].nickname:"?")+"\u53EB\u4EF7</div>";
@@ -524,8 +550,8 @@ function nG(){
   h+='<select id="nV">';
   for(var vi=1;vi<=6;vi++)h+='<option value="'+vi+'"'+("")+'>'+D[vi]+'</option>';
   h+='</select>';
-  h+='<button class="btn btn-primary btn-sm" onclick="nBid()">\u{1F4E2} \u53EB\u4EF7</button>';
-  h+='<button class="btn btn-warning btn-sm" onclick="nOp()">\u{1F50D} \u5F00\u724C</button>';
+  h+='<button class="btn btn-primary btn-sm" onclick="nBid()" id="nBidBtn">\u{1F4E2} \u53EB\u4EF7</button>';
+  h+='<button class="btn btn-warning btn-sm" onclick="nOp()" id="nOpBtn">\u{1F50D} \u5F00\u724C</button>';
   h+='</div>';
   if(gs.bid_history&&gs.bid_history.length>0){
     h+='<div class="bid-his"><div class="bid-title">\u{1F4CB} \u53EB\u4EF7\u8BB0\u5F55</div>';
@@ -536,10 +562,38 @@ function nG(){
   }
   h+='</div>';
   h+='<div class="open-box'+(gs.open_result?" show":"")+'" id="nOB"><h4>\u{1F4CA} \u5168\u573A\u7EDF\u8BA1</h4><div class="stats-g" id="nOG"></div></div>';
+  setTimeout(function(){
+    var isMyTurn=pls[gs.turn_index]&&pls[gs.turn_index].player_uuid===myU;
+    var b=document.getElementById("nBidBtn");
+    var o=document.getElementById("nOpBtn");
+    var r=document.getElementById("nRollBtn");
+    if(b)b.disabled=!isMyTurn||isSpectator;
+    if(o)o.disabled=!isMyTurn||isSpectator||!gs.current_bid;
+    if(r)r.disabled=hasRolled||isSpectator;
+  },100);
   return h
 }
 async function nBid(){var q=parseInt(document.getElementById("nQ").value),v=parseInt(document.getElementById("nV").value);if(gs.current_bid&&(q<gs.current_bid.qty||(q===gs.current_bid.qty&&v<=gs.current_bid.val))){tt("叫价必须更大","bad");return}try{var nt=(gs.turn_index+1)%pls.length;await sb().from("dice_game_state").update({current_bid:{qty:q,val:v},bid_history:[...(gs.bid_history||[]),{p:pls[gs.turn_index].nickname,qty:q,val:v}],turn_index:nt,wild_broken:v===1?true:gs.wild_broken,open_result:null}).eq("id",gs.id)}catch(e){}}
-async function nOp(){if(!gs.current_bid){tt("没人叫价","bad");return}var ap=pls.filter(p=>p.dice),c={1:0,2:0,3:0,4:0,5:0,6:0};ap.forEach(p=>p.dice.forEach(v=>c[v]++));var ow=!gs.wild_broken,res={};for(var vi=1;vi<=6;vi++){var t=c[vi];if(ow&&vi!==1)t+=c[1];res[vi]={raw:c[vi],total:t}}res.oneIsWild=ow;try{await sb().from("dice_game_state").update({open_result:res}).eq("id",gs.id)}catch(e){}}
+async function nOp(){
+  if(!gs.current_bid){tt("\u6CA1\u4EBA\u53EB\u4EF7","bad");return}
+  var ap=pls.filter(p=>p.dice&&p.seat_number!==0),c={1:0,2:0,3:0,4:0,5:0,6:0};
+  ap.forEach(p=>p.dice.forEach(v=>c[v]++));
+  var ow=!gs.wild_broken,res={};
+  for(var vi=1;vi<=6;vi++){
+    var t=c[vi];
+    if(ow&&vi!==1)t+=c[1];
+    res[vi]={raw:c[vi],total:t}
+  }
+  res.oneIsWild=ow;
+  var bid=gs.current_bid;
+  var wildTotal=res[bid.val]?res[bid.val].total:0;
+  var bidderWins=wildTotal>=bid.qty;
+  var bidderName=gs.bid_history&&gs.bid_history.length>0?gs.bid_history[gs.bid_history.length-1].p:"?";
+  res.winner=bidderWins?"bidder":"opener";
+  res.winnerName=bidderName;
+  res.wildTotal=wildTotal;
+  try{await sb().from("dice_game_state").update({open_result:res}).eq("id",gs.id)}catch(e){}
+}
 
 rd();
 </script>
