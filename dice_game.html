@@ -45,8 +45,8 @@ body{font-family:system-ui,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif
 .bid-cur .hl{color:#f1c40f;font-weight:bold;font-size:22px}
 .bid-ctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
 .bid-ctl select{padding:6px 10px;border:1px solid #0f3460;background:#1a1a2e;color:#eee;border-radius:6px;font-size:14px;outline:none}
-.bid-his{text-align:center;font-size:11px;color:#666;margin-top:4px}
-.bid-his em{display:inline-block;margin:0 3px;padding:2px 6px;background:#1a1a2e;border-radius:4px;font-style:normal;font-size:11px}
+.bid-his{background:#0f1a30;border:1px solid #1a3a5c;border-radius:10px;padding:10px;margin-top:8px;max-height:200px;overflow-y:auto}
+.bid-his .bid-title{font-size:12px;color:#888;margin-bottom:6px;text-align:center}.bid-his .bid-row{display:flex;align-items:center;padding:5px 8px;margin-bottom:3px;background:#1a1a2e;border-radius:6px;font-size:13px;gap:8px}.bid-his .bid-team{font-size:16px;min-width:28px}.bid-his .bid-text{flex:1;color:#ccc}.bid-his .bid-qty{color:#f1c40f;font-weight:bold}
 .open-box{display:none;background:#1a1a2e;border-radius:10px;padding:12px;margin-top:8px}
 .open-box.show{display:block}
 .open-box h4{text-align:center;color:#e94560;font-size:14px;margin-bottom:6px}
@@ -528,8 +528,10 @@ function nG(){
   h+='<button class="btn btn-warning btn-sm" onclick="nOp()">\u{1F50D} \u5F00\u724C</button>';
   h+='</div>';
   if(gs.bid_history&&gs.bid_history.length>0){
-    h+='<div class="bid-his">';
-    gs.bid_history.forEach(b=>{h+='<em>'+b.p+": "+b.qty+"\u4E2A"+D[b.val]+"</em> ";});
+    h+='<div class="bid-his"><div class="bid-title">\u{1F4CB} \u53EB\u4EF7\u8BB0\u5F55</div>';
+    gs.bid_history.forEach(b=>{
+      h+='<div class="bid-row"><span class="bid-team">\u{1F464}</span><span class="bid-text">'+b.p+'</span><span class="bid-qty">'+b.qty+'\u4E2A '+D[b.val]+'</span></div>';
+    });
     h+='</div>';
   }
   h+='</div>';
