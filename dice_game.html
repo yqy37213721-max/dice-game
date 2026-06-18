@@ -408,7 +408,54 @@ async function wOp(){
 }
 
 // ---- 骰子模式 ----
-function nG(){return '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px">'+pls.map((p,i)=>{var d=p.dice,it=gs.turn_index===i;return '<div class="p-card'+(it?" cur":"")+'"><div class="nm">'+p.nickname+(it?" 👈":"")+'</div><div class="dr">'+(d?d.map(v=>dieX(v)).join(""):'<span style="font-size:10px;color:#555">未掷</span>')+'</div></div>'}).join("")+'</div><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:6px"><button class="btn btn-primary btn-sm" onclick="rDice()">🎲 掷骰</button></div><div class="bid-s"><div class="bid-turn">🎯 '+(pls[gs.turn_index]?pls[gs.turn_index].nickname:"?")+"叫价</div>"+(gs.current_bid?'<div class="bid-cur">叫价：<span class="hl">'+gs.current_bid.qty+"个 "+D[gs.current_bid.val]+'</span></div><div style="font-size:10px;color:#888;text-align:center">1'+(gs.wild_broken?"❌":"✅")+'</div>':'<div class="bid-cur" style="color:#888;font-size:14px">尚未叫价</div>')+'<div class="bid-ctl"><select id="nQ">'+Array.from({length:pls.length*5},(_,i)=>i+1).map(q=>'<option value="'+q+'"'+(gs.current_bid&&q<=gs.current_bid.qty?" disabled":"")+">"+q+"个</option>").join("")+'</select><select id="nV">'+[1,2,3,4,5,6].map(v=>'<option value="'+v+'"'+(gs.wild_broken&&v===1?" disabled":"")+">"+D[v]+"</option>").join("")+'</select><button class="btn btn-primary btn-sm" onclick="nBid()">📢 叫价</button><button class="btn btn-warning btn-sm" onclick="nOp()">🔍 开牌</button></div>'+(gs.bid_history&&gs.bid_history.length>0?'<div class="bid-his">'+gs.bid_history.map(b=>'<em>'+b.p+": "+b.qty+"个"+D[b.val]+"</em>").join("→")+'</div>':"")+'</div><div class="open-box'+(gs.open_result?" show":"")+'" id="nOB"><h4>📊 全场统计</h4><div class="stats-g" id="nOG"></div></div>'}
+function nG(){
+  var showAll=gs.open_result?true:false;
+  var h='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px">';
+  pls.forEach((p,i)=>{
+    var d=p.dice,it=gs.turn_index===i;
+    var isMe=p.player_uuid===myU;
+    var showDice=isMe||showAll;
+    h+='<div class="p-card'+(it?" cur":"")+'">';
+    h+='<div class="nm">'+p.nickname+(it?" \u{1F448}":"")+'</div>';
+    h+='<div class="dr">';
+    if(d){
+      if(showDice)h+=d.map(v=>dieX(v)).join("");
+      else h+='<span style="font-size:20px;opacity:0.4">\u{1F3B2}</span>';
+    }else h+='<span style="font-size:10px;color:#555">\u672A\u63F7</span>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:6px">';
+  h+='<button class="btn btn-primary btn-sm" onclick="rDice()">\u{1F3B2} \u63F7\u9AB0</button>';
+  h+='</div>';
+  h+='<div class="bid-s">';
+  h+='<div class="bid-turn">\u{1F3AF} '+(pls[gs.turn_index]?pls[gs.turn_index].nickname:"?")+"\u53EB\u4EF7</div>";
+  if(gs.current_bid){
+    h+='<div class="bid-cur">\u53EB\u4EF7\uFF1A<span class="hl">'+gs.current_bid.qty+"\u4E2A "+D[gs.current_bid.val]+'</span></div>';
+    h+='<div style="font-size:10px;color:#888;text-align:center">1'+(gs.wild_broken?"\u274C":"\u2705")+'</div>';
+  }else{
+    h+='<div class="bid-cur" style="color:#888;font-size:14px">\u5C1A\u672A\u53EB\u4EF7</div>';
+  }
+  h+='<div class="bid-ctl">';
+  h+='<select id="nQ">';
+  var maxQ=pls.length*5;
+  for(var qi=1;qi<=maxQ;qi++)h+='<option value="'+qi+'"'+(gs.current_bid&&qi<=gs.current_bid.qty?" disabled":"")+'>'+qi+'\u4E2A</option>';
+  h+='</select>';
+  h+='<select id="nV">';
+  for(var vi=1;vi<=6;vi++)h+='<option value="'+vi+'"'+(gs.wild_broken&&vi===1?" disabled":"")+'>'+D[vi]+'</option>';
+  h+='</select>';
+  h+='<button class="btn btn-primary btn-sm" onclick="nBid()">\u{1F4E2} \u53EB\u4EF7</button>';
+  h+='<button class="btn btn-warning btn-sm" onclick="nOp()">\u{1F50D} \u5F00\u724C</button>';
+  h+='</div>';
+  if(gs.bid_history&&gs.bid_history.length>0){
+    h+='<div class="bid-his">';
+    gs.bid_history.forEach(b=>{h+='<em>'+b.p+": "+b.qty+"\u4E2A"+D[b.val]+"</em> ";});
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div class="open-box'+(gs.open_result?" show":"")+'" id="nOB"><h4>\u{1F4CA} \u5168\u573A\u7EDF\u8BA1</h4><div class="stats-g" id="nOG"></div></div>';
+  return h
+}
 async function nBid(){var q=parseInt(document.getElementById("nQ").value),v=parseInt(document.getElementById("nV").value);if(gs.current_bid&&(q<gs.current_bid.qty||(q===gs.current_bid.qty&&v<=gs.current_bid.val))){tt("叫价必须更大","bad");return}try{var nt=(gs.turn_index+1)%pls.length;await sb().from("dice_game_state").update({current_bid:{qty:q,val:v},bid_history:[...(gs.bid_history||[]),{p:pls[gs.turn_index].nickname,qty:q,val:v}],turn_index:nt,wild_broken:v===1?true:gs.wild_broken,open_result:null}).eq("id",gs.id)}catch(e){}}
 async function nOp(){if(!gs.current_bid){tt("没人叫价","bad");return}var ap=pls.filter(p=>p.dice),c={1:0,2:0,3:0,4:0,5:0,6:0};ap.forEach(p=>p.dice.forEach(v=>c[v]++));var ow=!gs.wild_broken,res={};for(var vi=1;vi<=6;vi++){var t=c[vi];if(ow&&vi!==1)t+=c[1];res[vi]={raw:c[vi],total:t}}res.oneIsWild=ow;try{await sb().from("dice_game_state").update({open_result:res}).eq("id",gs.id)}catch(e){}}
 
