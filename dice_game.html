@@ -52,7 +52,7 @@ body{font-family:system-ui,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif
 .open-box h4{text-align:center;color:#e94560;font-size:14px;margin-bottom:6px}
 .stats-g{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .stat-i{background:#16213e;padding:6px 12px;border-radius:8px;text-align:center;min-width:50px}
-.stat-i .num{font-size:18px;font-weight:bold;color:#f1c40f}.stat-i .lb{font-size:11px;color:#888}
+.stat-i .num{font-size:22px;font-weight:bold;color:#f1c40f}.stat-i .lb{font-size:11px;color:#888}
 .p-card{background:#16213e;border:2px solid #0f3460;border-radius:10px;padding:6px 8px;text-align:center;min-width:72px;display:inline-block;margin:3px}
 .p-card.cur{border-color:#f1c40f;box-shadow:0 0 10px rgba(241,196,15,.3)}
 .p-card .nm{font-size:12px;font-weight:bold;margin-bottom:3px}
@@ -69,6 +69,16 @@ body{font-family:system-ui,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif
 .player-item .dot.on{background:#27ae60}.player-item .dot.off{background:#555}
 #err{display:none;background:#2c1010;border:1px solid #c0392b;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#e74c3c;white-space:pre-wrap;max-height:200px;overflow-y:auto}
 @media(max-width:600px){.teams-grid{grid-template-columns:1fr}}
+
+.turn-banner{background:linear-gradient(135deg,#f1c40f,#e67e22);color:#000;text-align:center;padding:10px;border-radius:10px;margin-bottom:8px;font-weight:bold;font-size:15px;animation:pulse 1.5s infinite}
+.turn-banner.wait{background:linear-gradient(135deg,#555,#333);color:#888;animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+.btn-join{width:100%;padding:16px;font-size:16px;margin:4px 0}
+.team-card{border-radius:12px;padding:12px}
+.player-slot{padding:8px 10px;min-width:70px}
+.bid-ctl select{padding:10px 14px;font-size:16px;min-width:70px}
+.bid-ctl button{padding:10px 16px;font-size:14px}
+@media(max-width:400px){.die{width:38px;height:38px;font-size:22px}}
 </style>
 
 <!-- v1781779754474 -->
@@ -341,7 +351,7 @@ function tC(c,l,ids,cap){return '<div class="team-card '+c+'"><div class="ttl">'
 async function jT(sn,t){
   var ta=(gs.team_a||[]).filter(x=>x!==sn),tb=(gs.team_b||[]).filter(x=>x!==sn);
   if(t===0)ta.push(sn);else tb.push(sn);
-  try{await sb().from("dice_game_state").update({team_a:ta,team_b:tb}).eq("id",gs.id)}catch(e){}
+  try{await sb().from("dice_game_state").update({team_a:ta,team_b:tb}).eq("id",gs.id);tt(t===0?"\u{1F535} \u52A0\u5165 A\u961F":"\u{1F534} \u52A0\u5165 B\u961F","good");}catch(e){}
 }
 async function wGo(){if(!(gs.team_a||[]).length||!(gs.team_b||[]).length){tt("两队都要有人","bad");return}try{await sb().from("dice_game_state").update({captain_a:(gs.team_a||[])[0],captain_b:(gs.team_b||[])[0],phase:"battle"}).eq("id",gs.id)}catch(e){}}
 function wB(){
@@ -352,7 +362,10 @@ function wB(){
   var enMembers=myTeam==="a"?tb:ta;
   var myPlayer=pls.find(p=>p.player_uuid===myU);
   var showAll=gs.open_result?true:false;
-  var ui="";
+  var ui="";ui+='<div class="turn-banner'+(gs.active_team===myTeam?"":" wait")+'">';
+  ui+=(gs.active_team===myTeam?"\u{1F7E2} \u8F6E\u5230\u4F60\u4EEC\u961F\u53EB\u4EF7":"\u{1F534} \u7B49\u5F85\u5BF9\u624B\u53EB\u4EF7");
+  ui+='</div>';
+  
   ui+='<div style="text-align:center;margin-bottom:6px">';
   ui+='<span style="font-size:11px;color:#555">\u4F60\u5728</span> ';
   ui+='<span style="font-size:14px;font-weight:bold;color:'+(myTeam==="a"?"#3498db":"#e74c3c")+'">'+(myTeam==="a"?"\u{1F535} A\u961F":"\u{1F534} B\u961F")+'</span>';
@@ -381,7 +394,7 @@ function wB(){
       var winName=r.winner==="a"?"\u{1F535} A\u961F":"\u{1F534} B\u961F";
       var loseName=r.winner==="a"?"\u{1F534} B\u961F":"\u{1F535} A\u961F";
       ui+='<div class="card" style="text-align:center;border:2px solid '+winColor+';background:#1a1a2e">';
-      ui+='<div style="font-size:28px;margin-bottom:4px">\u{1F3C6}</div>';
+      ui+='<div style="font-size:50px;margin-bottom:8px">\u{1F3C6}</div>';
       ui+='<div style="font-size:18px;font-weight:bold;color:'+winColor+'">'+winName+' \u83B7\u80DC!</div>';
       ui+='<div style="font-size:12px;color:#888;margin-top:4px">'+loseName+' \u559D\u9152</div>';
       ui+='<div style="font-size:11px;color:#666;margin-top:2px">\u53EB\u4EF7 '+bid.qty+'\u4E2A'+D[bid.val]+' | \u5B9E\u9645 '+r.wildTotal+'\u4E2A</div>';
