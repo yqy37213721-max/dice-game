@@ -97,6 +97,29 @@ function ee(m){document.getElementById("err").style.display="block";document.get
 
 var pg="lobby",rc=null,ri=null,myU=localStorage.getItem("duuid")||null,myS=null,host=false,pls=[],gs=null,wR={},tR=null,tP=null,tG=null,LD=false,isSpectator=false;
 
+async function newRound(){
+  try{
+    await sb().from("dice_game_state").update({
+      current_bid:null,bid_history:[],wild_broken:false,open_result:null,
+      active_team:"a",phase:"battle"
+    }).eq("id",gs.id);
+    await sb().from("dice_players").update({dice:null,dice_revealed:false}).eq("room_id",ri);
+    tt("\u{1F504} \u65B0\u4E00\u8F6E\u5F00\u59CB","good")
+  }catch(e){ee("\u65B0\u4E00\u8F6E\u5931\u8D25: "+e.message)}
+}
+async function specJoin(){
+  if(!isSpectator){tt("\u4F60\u5DF2\u5728\u6E38\u620F\u4E2D","bad");return}
+  try{
+    var mr=await sb().from("dice_players").select("seat_number").eq("room_id",ri).order("seat_number",{ascending:false}).limit(1);
+    var sn2=mr.data&&mr.data.length>0?mr.data[0].seat_number+1:1;
+    await sb().from("dice_players").update({seat_number:sn2,is_spectator:false}).eq("room_id",ri).eq("player_uuid",myU);
+    myS=sn2;isSpectator=false;
+    var ta=gs.team_a||[],tb=gs.team_b||[];
+    if(ta.length<=tb.length)ta.push(sn2);else tb.push(sn2);
+    await sb().from("dice_game_state").update({team_a:ta,team_b:tb}).eq("id",gs.id);
+    tt("\u2705 \u5DF2\u52A0\u5165\u6E38\u620F\uFF0C\u5EA7\u4F4D #"+sn2,"good")
+  }catch(e){ee("\u52A0\u5165\u5931\u8D25: "+e.message)}
+}
 function rd(){
   var ae=document.activeElement;
   if(ae&&ae.tagName==="SELECT"){return}
@@ -358,7 +381,11 @@ function wB(){
       ui+='<div style="font-size:18px;font-weight:bold;color:'+winColor+'">'+winName+' \u83B7\u80DC!</div>';
       ui+='<div style="font-size:12px;color:#888;margin-top:4px">'+loseName+' \u559D\u9152</div>';
       ui+='<div style="font-size:11px;color:#666;margin-top:2px">\u53EB\u4EF7 '+bid.qty+'\u4E2A'+D[bid.val]+' | \u5B9E\u9645 '+r.wildTotal+'\u4E2A</div>';
-      ui+='</div>';
+      ui+='<div style="text-align:center;margin-top:8px">';
+    if(host)ui+='<button class="btn btn-primary btn-sm" onclick="newRound()">\u{1F504} \u4E0B\u4E00\u8F6E</button> ';
+    if(isSpectator)ui+='<button class="btn btn-success btn-sm" onclick="specJoin()">\u{1F44D} \u52A0\u5165\u6E38\u620F</button>';
+    ui+='</div>';
+    ui+='</div>';
     }
     ui+='<div id="wOG"></div>';
   }
@@ -455,6 +482,9 @@ function nG(){
     });
     sh+='</div>';
     if(gs.current_bid)sh+='<div style="text-align:center;margin-top:8px;font-size:14px">\u53EB\u4EF7\uFF1A<b style="color:#f1c40f">'+gs.current_bid.qty+'\u4E2A '+D[gs.current_bid.val]+'</b></div>';
+    sh+='<div style="text-align:center;margin-top:8px">';
+    sh+='<button class="btn btn-success btn-sm" onclick="specJoin()">\u{1F44D} \u52A0\u5165\u6E38\u620F</button>';
+    sh+='</div>';
     sh+='</div>';
     if(gs.open_result)sh+='<div id="nOG"></div>';
     return sh;
