@@ -557,7 +557,7 @@ async function wOp(){
   if(!wo.losers.includes(loserSn))wo.losers.push(loserSn);
   // The loser is eliminated - mark as advanced
   if(loserSide==="a")wo.cur_a=(wo.cur_a||0)+1;else wo.cur_b=(wo.cur_b||0)+1;
-  try{await sb().from("dice_game_state").update({open_result:res,turn_order:wo}).eq("id",gs.id)}catch(e){}
+  try{await sb().from("dice_game_state").update({open_result:res,turn_order:wo}).eq("id",gs.id);gs.open_result=res;gs.turn_order=wo;rd()}catch(e){}
 }
 async function wAdv(){
   var wo=gs.turn_order||{};
