@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html><html lang="zh-CN"><head>
+﻿<!DOCTYPE html><html lang="zh-CN"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>v3 🎲 骰子战争</title>
 <style>
@@ -20,6 +20,7 @@ body{font-family:system-ui,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif
 .die-v4{background:linear-gradient(135deg,#89f7fe,#66a6ff);color:#2980b9}
 .die-v5{background:linear-gradient(135deg,#f093fb,#f5576c);color:#8e44ad}
 .die-v6{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#1a5276}
+.die-hidden{background:linear-gradient(135deg,#2c3e50,#3d3d3d);color:#666;cursor:default;box-shadow:inset 0 0 0 1.5px #555}
 .header{text-align:center;padding:10px 0}
 .header h1{font-size:22px;color:#e94560}
 .header .sub{font-size:11px;color:#888}
@@ -96,6 +97,7 @@ function sb(){return _sb}
 const D={1:"1",2:"2",3:"3",4:"4",5:"5",6:"6"};
 function die(v){return '<span class="die die-v'+v+'">'+D[v]+'</span>'}
 function dieX(v){return '<span class="die die-xs die-v'+v+'">'+D[v]+'</span>'}
+function dieH(){return '<span class="die die-xs die-hidden">?</span>'}
 function rnd(n){return Math.floor(Math.random()*n)+1}
 function rl(n){return Array.from({length:n},()=>rnd(6))}
 function isS(d){var s=[...new Set(d)].sort().join("");return s==="12345"||s==="23456"}
@@ -429,14 +431,14 @@ function wB(){
   ui+="<div style=\"display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:10px;background:#16213e;border-radius:14px;border:1px solid #0f3460\">";
   ui+="<div style=\"text-align:center;min-width:100px\">";
   ui+="<div style=\"font-size:13px;color:#3498db;font-weight:bold\">\u{1F535} "+nA+"</div>";
-  if(pA&&pA.dice)ui+="<div style=\"margin-top:6px\">"+pA.dice.map(v=>dieX(v)).join("")+"</div>";
+  if(pA&&pA.dice){var showA=myS===snA||showAll;ui+="<div style=\"margin-top:6px\">"+(showA?pA.dice.map(v=>dieX(v)):pA.dice.map(()=>dieH())).join("")+"</div>"}
   else ui+="<div style=\"margin-top:6px\"><span style=\"font-size:18px;opacity:0.4\">\u{1F3B2}</span></div>";
   if(!hasRolledA&&!showAll)ui+="<div style=\"font-size:10px;color:#888;margin-top:3px\">\u672A\u63F7</div>";
   ui+="</div>";
   ui+="<div style=\"font-size:20px;font-weight:bold;color:#e94560\">VS</div>";
   ui+="<div style=\"text-align:center;min-width:100px\">";
   ui+="<div style=\"font-size:13px;color:#e74c3c;font-weight:bold\">\u{1F534} "+nB+"</div>";
-  if(pB&&pB.dice)ui+="<div style=\"margin-top:6px\">"+pB.dice.map(v=>dieX(v)).join("")+"</div>";
+  if(pB&&pB.dice){var showB=myS===snB||showAll;ui+="<div style=\"margin-top:6px\">"+(showB?pB.dice.map(v=>dieX(v)):pB.dice.map(()=>dieH())).join("")+"</div>"}
   else ui+="<div style=\"margin-top:6px\"><span style=\"font-size:18px;opacity:0.4\">\u{1F3B2}</span></div>";
   if(!hasRolledB&&!showAll)ui+="<div style=\"font-size:10px;color:#888;margin-top:3px\">\u672A\u63F7</div>";
   ui+="</div></div></div>";
