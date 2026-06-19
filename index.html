@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html><html lang="zh-CN"><head>
+﻿﻿<!DOCTYPE html><html lang="zh-CN"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>v3 🎲 骰子战争</title>
 <style>
@@ -132,13 +132,9 @@ async function specJoin(){
     tt("\u2705 \u5DF2\u52A0\u5165\u6E38\u620F\uFF0C\u5EA7\u4F4D #"+sn2,"good")
   }catch(e){ee("\u52A0\u5165\u5931\u8D25: "+e.message)}
 }
-function rd(){
-  var ae=document.activeElement;
-  if(ae&&ae.tagName==="SELECT"){return}
-  document.getElementById("app").innerHTML=pg==="lobby"?lo():pg==="room"?ro():ga();po()
-}
+function rd(){setTimeout(function(){var ae=document.activeElement;if(ae&&ae.tagName==="SELECT")return;document.getElementById("app").innerHTML=pg==="lobby"?lo():pg==="room"?ro():ga();po()},50)}
 function po(){
-  if(pg==="game"&&gs&&gs.mode==="war"&&gs.open_result){}
+  if(pg==="game"&&gs&&gs.mode==="war"&&gs.open_result){var g2=document.getElementById("wOG");if(g2&&!g2.querySelector(".stats-g")){var r2=gs.open_result;var h3="";for(var vi=1;vi<=6;vi++){h3+="<div class=\"stat-i\"><div class=\"lb\">"+(r2[vi]?r2[vi].raw:0)+"个"+D[vi]+"</div><span class=\"num\">"+(r2[vi]?r2[vi].total:0)+"</span>";if(vi!==1&&r2.oneIsWild)h3+="<div style=\"font-size:9px;color:#555\">+"+(r2[vi]?r2[vi].total-r2[vi].raw:0)+"</div>";h3+="</div>"}g2.innerHTML="<h4>📊 当前对决统计</h4><div class=\"stats-g\">"+h3+"</div>"}}
   if(pg==="game"&&gs&&gs.mode==="normal"&&gs.open_result){
     var g2=document.getElementById("nOG");
     if(!g2)return;
